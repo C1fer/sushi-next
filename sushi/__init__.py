@@ -1,10 +1,10 @@
 import bisect
 from itertools import takewhile, chain
 import logging
-import operator
 import os
 
 import numpy as np
+from scipy.signal import medfilt
 
 from . import chapters
 from .common import SushiError, get_extension, format_time, ensure_static_collection
@@ -32,42 +32,24 @@ def abs_diff(a, b):
 
 def interpolate_nones(data, points):
     data = ensure_static_collection(data)
-    values_lookup = {p: v for p, v in zip(points, data) if v is not None}
-    if not values_lookup:
-        return []
-
-    zero_points = {p for p, v in zip(points, data) if v is None}
-    if not zero_points:
-        return data
-
-    data_list = sorted(values_lookup.items())
-    zero_points = sorted(x for x in zero_points if x not in values_lookup)
-
-    out = np.interp(x=zero_points,
-                    xp=list(map(operator.itemgetter(0), data_list)),
-                    fp=list(map(operator.itemgetter(1), data_list)))
-
-    values_lookup.update(zip(zero_points, out))
-
+    valid_points = [p for p, v in zip(points, data) if v is not None]
+    valid_values = [v for v in data if v is not None]
+    
+    if not valid_points:
+        return [0.0] * len(data)
+    
+    # 使用numpy的一维插值
+    interpolated = np.interp(points, valid_points, valid_values)
     return [
-        values_lookup[point] if value is None else value
-        for point, value in zip(points, data)
+        interpolated[i] if data[i] is None else data[i]
+        for i in range(len(data))
     ]
-
 
 # todo: implement this as a running median
 def running_median(values, window_size):
     if window_size % 2 != 1:
         raise SushiError('Median window size should be odd')
-    half_window = window_size // 2
-    medians = []
-    items_count = len(values)
-    for idx in range(items_count):
-        radius = min(half_window, idx, items_count - idx - 1)
-        med = np.median(values[idx - radius:idx + radius + 1])
-        medians.append(med)
-    return medians
-
+    return medfilt(values, kernel_size=window_size).tolist()
 
 def smooth_events(events, radius):
     if not radius:
@@ -129,7 +111,7 @@ def split_broken_groups(groups):
     for g in groups:
         std = np.std([e.shift for e in g])
         if std > MAX_GROUP_STD:
-            logging.warn('Shift is not consistent between {0} and {1}, most likely chapters are wrong (std: {2}). '
+            logging.warning('Shift is not consistent between {0} and {1}, most likely chapters are wrong (std: {2}). '
                          'Switching to automatic grouping.'.format(format_time(g[0].start), format_time(g[-1].end),
                                                                    std))
             correct_groups.extend(detect_groups(g))
@@ -434,7 +416,7 @@ def calculate_shifts(src_stream, dst_stream, groups_list, normal_window, max_win
             uncommitted_states.append(group_state)
             idx += 1
             if rewind_thresh == len(uncommitted_states) and window < max_window:
-                logging.warn("Detected possibly broken segment starting at {0}, increasing the window from {1} to {2}"
+                logging.warning("Detected possibly broken segment starting at {0}, increasing the window from {1} to {2}"
                              .format(format_time(uncommitted_states[0]["start_time"]), window, max_window))
                 window = max_window
                 idx = len(committed_states)
