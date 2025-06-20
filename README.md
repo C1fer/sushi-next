@@ -1,7 +1,7 @@
 ## Sushi
 Automatic shifter for SRT and ASS subtitle based on audio streams.
 
-*Python 3 fork of https://github.com/tp7/Sushi.*
+*Python 3.13 fork of https://github.com/tp7/Sushi.*
 
 ### Purpose
 Imagine you've got a subtitle file synced to one video file, but you want to use these subtitles with some other video you've got via totally legal means. The common example is TV vs. BD releases, PAL vs. NTSC video and releases in different countries. In a lot of cases, subtitles won't match right away and you need to sync them.
@@ -30,7 +30,8 @@ Sushi should work on Windows, Linux and OS X. Please open an issue if it doesn't
 
 1. [Python 3.5 or higher][5]
 2. [NumPy][6] (1.8 or newer)
-3. [OpenCV 2.4.x or newer][7]
+3. [SciPy][6] (1.2 or newer)
+4. [OpenCV 2.4.x or newer][7]
 
 Optionally, you might want:
 
