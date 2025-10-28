@@ -87,12 +87,12 @@ class FFmpeg(object):
             'subrip': '.srt'
         }
 
-        streams = re.findall(r'Stream\s\#0:(\d+).*?Subtitle:\s*((\w*)\s*?(?:\((default)\))?\s*?(?:\(forced\))?)\r?\n'
+        streams = re.findall(r'Stream\s\#0:(\d+)(?:\([^)]*\))?:\s*Subtitle:\s*((\w+)(?:\s*\([^)]*\))?)\s*(?:\((default)\))?\s*(?:\(forced\))?\r?\n'
                              r'(?:\s*Metadata:\s*\r?\n'
                              r'\s*title\s*:\s*(.*?)\r?\n)?',
                              info, flags=re.VERBOSE)
-        return [SubtitlesStreamInfo(int(x[0]), x[1], maps.get(x[2], x[2]), x[3] != '', x[4].strip()) for x in streams]
-
+        return [SubtitlesStreamInfo(int(x[0]), x[1], maps.get(x[2], x[2]), x[3] != '', x[4].strip() if x[4] else '') for x in streams]
+    
     @classmethod
     def get_media_info(cls, path):
         info = cls.get_info(path)
