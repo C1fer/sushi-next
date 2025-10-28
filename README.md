@@ -18,7 +18,7 @@ Detailed explanation of Sushi workflow and description of command-line arguments
 ### Usage
 The minimal command line looks like this:
 ```
-python sushi.py --src hdtv.wav --dst bluray.wav --script subs.ass
+python -m sushi --src hdtv.wav --dst bluray.wav --script subs.ass
 ```
 Output file name is optional - `"{destination_path}.sushi.{subtitles_format}"` is used by default. See the [usage][3] page of the wiki for further examples.
 
@@ -28,9 +28,9 @@ Do note that WAV is not the only format Sushi can work with. It can process audi
 Sushi should work on Windows, Linux and OS X. Please open an issue if it doesn't. To run it, you have to have the following installed:
 
 1. [Python 3.13 or higher][5]
-2. [NumPy][6] (1.8 or newer)
-3. [SciPy][6] (1.2 or newer)
-4. [OpenCV 2.4.x or newer][7]
+2. [NumPy][6] (2.3.4 or newer)
+3. [SciPy][6] (1.16.2 or newer)
+4. [OpenCV 4.4.x or newer][7]
 
 Optionally, you might want:
 
@@ -46,7 +46,7 @@ The following steps are untested (see requirements earlier):
 
 1. Install Python (64 bit).
 2. Install OpenCV.
-3. Run `pip install sushi-sub colorama` on a terminal.
+3. Run `pip install sushi-sub-next colorama` on a terminal.
 4. Use it as `sushi args…` on a terminal.
 
 If anyone wants to provide proper installation steps or a binary for Windows, please open a PR or get in contact.
@@ -61,22 +61,8 @@ pip3 install numpy
 # install some optional dependencies
 brew install ffmpeg mkvtoolnix
 # install sushi
-pip3 install sushi-sub
+pip3 install sushi-sub-next
 # use sushi
-sushi args…
-```
-
-If you don't have pip, you can install numpy with homebrew, but that will probably add a few more dependencies.
-You will also need to install sushi manually.
-```bash
-brew tap homebrew/python
-brew install numpy
-# fetch sushi
-git clone https://github.com/FichteFoll/sushi
-# run from source
-python3 -m sushi args…
-# OR install globally (for your user)
-python3 setup.py install --user
 sushi args…
 ```
 
@@ -87,7 +73,7 @@ If you have apt-get available, the installation process is trivial.
 sudo apt-get update
 sudo apt-get install git python3 python3-numpy python3-opencv
 
-pip3 install --user sushi-sub
+pip3 install --user sushi-sub-next
 # if ~/.local/bin is in your PATH
 sushi args…
 # otherwise
