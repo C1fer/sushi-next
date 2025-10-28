@@ -1,4 +1,4 @@
-## Sushi
+## Sushi-next
 Automatic shifter for SRT and ASS subtitle based on audio streams.
 
 *Python 3.13 fork of https://github.com/tp7/Sushi.*

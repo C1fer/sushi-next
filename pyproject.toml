@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "sushi"
+name = "sushi-sub-next"
 version = "0.6.3"
 description = "Subtitle Synchronization Tool"
 authors = ["C1fer"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/C1fer/Sushi"
+repository = "https://github.com/C1fer/sushi-next"
 keywords = ["subtitle", "sync"]
 classifiers = [
     'Development Status :: 5 - Production/Stable',
@@ -13,12 +13,18 @@ classifiers = [
     'Topic :: Multimedia :: Sound/Audio',
     'Topic :: Text Processing',
 ]
+packages = [
+    { include = "sushi" }
+]
 
 [tool.poetry.dependencies]
 python = ">=3.13"
 numpy = "^2.3.4"
 scipy = "^1.16.2"
 opencv-python = "^4.8.1.78"
+
+[tool.poetry.scripts]
+sushi = "sushi.__main__:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

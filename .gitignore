@@ -6,3 +6,6 @@ dist
 build
 tests.json
 *.egg-info
+.vscode/
+__pycache__/
+poetry.lock
