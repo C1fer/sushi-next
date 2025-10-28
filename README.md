@@ -3,13 +3,12 @@ Automatic shifter for SRT and ASS subtitle based on audio streams.
 
 *Python 3.13 fork of https://github.com/tp7/Sushi.*
 
+Credits to [DYY-Studio](https://github.com/DYY-Studio/Sushi) for the initial v3.13 porting work.
+
 ### Purpose
 Imagine you've got a subtitle file synced to one video file, but you want to use these subtitles with some other video you've got via totally legal means. The common example is TV vs. BD releases, PAL vs. NTSC video and releases in different countries. In a lot of cases, subtitles won't match right away and you need to sync them.
 
 The purpose of this script is to avoid all the hassle of manual syncing. It attempts to synchronize subtitles by finding similarities in audio streams. The script is very fast and can be used right when you want to watch something.
-
-<!-- ### Downloads
-The latest Windows binary release can always be found in the [releases][1] section. You need the 7z archive in the top entry. -->
 
 ### How it works
 You need to provide two audio files and a subtitle file that matches one of those files. For every line of the subtitles, the script will extract corresponding audio from the source audio stream and will try to find the closest similar pattern in the destination audio stream, obtaining a shift value which is later applied to the subtitles.
@@ -28,7 +27,7 @@ Do note that WAV is not the only format Sushi can work with. It can process audi
 ### Requirements
 Sushi should work on Windows, Linux and OS X. Please open an issue if it doesn't. To run it, you have to have the following installed:
 
-1. [Python 3.5 or higher][5]
+1. [Python 3.13 or higher][5]
 2. [NumPy][6] (1.8 or newer)
 3. [SciPy][6] (1.2 or newer)
 4. [OpenCV 2.4.x or newer][7]

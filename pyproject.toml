@@ -1,7 +1,25 @@
-[build-system]
-requires = [
-  "setuptools>=42",
-  "wheel",
-  "numpy"
+[tool.poetry]
+name = "sushi"
+version = "0.6.3"
+description = "Subtitle Synchronization Tool"
+authors = ["C1fer"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/C1fer/Sushi"
+keywords = ["subtitle", "sync"]
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python :: 3.13',
+    'Topic :: Multimedia :: Sound/Audio',
+    'Topic :: Text Processing',
 ]
-build-backend = "setuptools.build_meta"
+
+[tool.poetry.dependencies]
+python = ">=3.13"
+numpy = "^2.3.4"
+scipy = "^1.16.2"
+opencv-python = "^4.8.1.78"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
