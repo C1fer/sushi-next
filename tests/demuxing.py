@@ -1,3 +1,5 @@
+import json
+import subprocess
 import unittest
 from unittest import mock
 
@@ -15,57 +17,163 @@ def create_popen_mock():
 
 
 class FFmpegTestCase(unittest.TestCase):
-    ffmpeg_output = '''Input #0, matroska,webm, from 'test.mkv':
-        Stream #0:0(jpn): Video: h264 (High 10), yuv420p10le, 1280x720 [SAR 1:1 DAR 16:9], 23.98 fps, 23.98 tbr, 1k tbn, 47.95 tbc (default)
-        Metadata:
-          title           : Video 10bit
-        Stream #0:1(jpn): Audio: aac, 48000 Hz, stereo, fltp (default) (forced)
-        Metadata:
-          title           : Audio AAC 2.0
-        Stream #0:2(eng): Audio: aac, 48000 Hz, stereo, fltp
-        Metadata:
-          title           : English Audio AAC 2.0
-        Stream #0:3(eng): Subtitle: ssa (default) (forced)
-        Metadata:
-          title           : English Subtitles
-        Stream #0:4(enm): Subtitle: ass
-        Metadata:
-          title           : English (JP honorifics)
-        .................................'''
+    ffprobe_info_json = {
+        'streams': [
+            {
+                'index': 0,
+                'codec_type': 'video',
+                'codec_name': 'h264',
+                'profile': 'High 10',
+                'width': 1280,
+                'height': 720,
+                'disposition': {'default': 1},
+                'tags': {'title': 'Video 10bit'}
+            },
+            {
+                'index': 1,
+                'codec_type': 'audio',
+                'codec_name': 'aac',
+                'sample_rate': '48000',
+                'channel_layout': 'stereo',
+                'bits_per_raw_sample': '16',
+                'disposition': {'default': 1},
+                'tags': {'title': 'Audio AAC 2.0'}
+            },
+            {
+                'index': 2,
+                'codec_type': 'audio',
+                'codec_name': 'aac',
+                'sample_rate': '48000',
+                'channel_layout': 'stereo',
+                'disposition': {'default': 0},
+                'tags': {'title': 'English Audio AAC 2.0'}
+            },
+            {
+                'index': 3,
+                'codec_type': 'subtitle',
+                'codec_name': 'ssa',
+                'disposition': {'default': 1},
+                'tags': {'language': 'eng', 'title': 'English Subtitles'}
+            },
+            {
+                'index': 4,
+                'codec_type': 'subtitle',
+                'codec_name': 'subrip',
+                'disposition': {'default': 0},
+                'tags': {'language': 'enm', 'title': 'English (JP honorifics)'}
+            },
+            {
+                'index': 5,
+                'codec_type': 'attachment',
+                'codec_name': 'ttf'
+            }
+        ],
+        'chapters': [
+            {'start_time': '0.000000'},
+            {'start_time': '17.017000'},
+            {'start_time': '107.023000'}
+        ]
+    }
 
-    def test_parses_audio_stream(self):
-        audio = FFmpeg._get_audio_streams(self.ffmpeg_output)
+    def test_get_clean_probe_info_filters_attachment_streams(self):
+        streams_by_type, chapter_list = FFmpeg.get_clean_probe_info(json.dumps(self.ffprobe_info_json))
+
+        self.assertEqual(len(streams_by_type['video']), 1)
+        self.assertEqual(len(streams_by_type['audio']), 2)
+        self.assertEqual(len(streams_by_type['subtitle']), 2)
+        self.assertNotIn('attachment', streams_by_type)
+        self.assertEqual(chapter_list, self.ffprobe_info_json['chapters'])
+
+    def test_parses_audio_stream_v2(self):
+        parsed_streams = [s for s in self.ffprobe_info_json['streams'] if s['codec_type'] == 'audio']
+        audio = FFmpeg._get_audio_streams_v2(parsed_streams)
+
         self.assertEqual(len(audio), 2)
         self.assertEqual(audio[0].id, 1)
+        self.assertEqual(audio[0].info, 'aac, 48000 Hz, stereo, 16 bits')
+        self.assertTrue(audio[0].default)
         self.assertEqual(audio[0].title, 'Audio AAC 2.0')
         self.assertEqual(audio[1].id, 2)
+        self.assertEqual(audio[1].info, 'aac, 48000 Hz, stereo')
+        self.assertFalse(audio[1].default)
         self.assertEqual(audio[1].title, 'English Audio AAC 2.0')
 
-    def test_parses_video_stream(self):
-        video = FFmpeg._get_video_streams(self.ffmpeg_output)
+    def test_parses_video_stream_v2(self):
+        parsed_streams = [s for s in self.ffprobe_info_json['streams'] if s['codec_type'] == 'video']
+        video = FFmpeg._get_video_streams_v2(parsed_streams)
+
         self.assertEqual(len(video), 1)
         self.assertEqual(video[0].id, 0)
+        self.assertEqual(video[0].info, 'h264 (High 10), 1280x720')
+        self.assertTrue(video[0].default)
         self.assertEqual(video[0].title, 'Video 10bit')
 
-    def test_parses_subtitles_stream(self):
-        subs = FFmpeg._get_subtitles_streams(self.ffmpeg_output)
+    def test_parses_subtitles_stream_v2(self):
+        parsed_streams = [s for s in self.ffprobe_info_json['streams'] if s['codec_type'] == 'subtitle']
+        subs = FFmpeg._get_subtitles_streams_v2(parsed_streams)
+
         self.assertEqual(len(subs), 2)
         self.assertEqual(subs[0].id, 3)
+        self.assertEqual(subs[0].info, 'ssa')
+        self.assertEqual(subs[0].type, '.ass')
         self.assertTrue(subs[0].default)
-        self.assertEqual(subs[0].title, 'English Subtitles')
+        self.assertEqual(subs[0].title, 'English Subtitles (eng)')
         self.assertEqual(subs[1].id, 4)
+        self.assertEqual(subs[1].info, 'subrip')
+        self.assertEqual(subs[1].type, '.srt')
         self.assertFalse(subs[1].default)
-        self.assertEqual(subs[1].title, 'English (JP honorifics)')
+        self.assertEqual(subs[1].title, 'English (JP honorifics) (enm)')
+
+    def test_parses_chapter_times_v2(self):
+        chapter_times = FFmpeg._get_chapters_times_v2(self.ffprobe_info_json['chapters'])
+        self.assertEqual(chapter_times, [0.0, 17.017, 107.023])
+
+    @mock.patch('sushi.demux.logging.warning')
+    def test_subtitles_stream_skips_unsupported_format(self, warning_mock):
+        parsed_streams = [{
+            'index': 7,
+            'codec_name': 'dvd_subtitle',
+            'tags': {'language': 'eng', 'title': 'PGS'},
+            'disposition': {'default': 0}
+        }]
+
+        subtitles = FFmpeg._get_subtitles_streams_v2(parsed_streams)
+        self.assertEqual(subtitles, [])
+        warning_mock.assert_called_once_with('Unsupported subtitle format: dvd_subtitle. Skipping...')
 
     @mock.patch('subprocess.Popen', new_callable=create_popen_mock)
-    def test_get_info_call_args(self, popen_mock):
-        FFmpeg.get_info('random_file.mkv')
-        self.assertEqual(popen_mock.call_args[0][0], ['ffmpeg', '-hide_banner', '-i', 'random_file.mkv'])
+    def test_get_info_v2_call_args(self, popen_mock):
+        self.assertEqual(FFmpeg.get_info_v2('random_file.mkv'), 'ouput')
+        self.assertEqual(popen_mock.call_args[0][0], [
+            'ffprobe',
+            '-v', 'quiet',
+            '-show_streams',
+            '-show_chapters',
+            '-show_entries', 'chapter=start_time',
+            '-print_format', 'json=compact=1',
+            'random_file.mkv'
+        ])
+        self.assertEqual(popen_mock.call_args[1], {
+            'stdout': subprocess.PIPE,
+            'text': True,
+            'encoding': 'utf-8'
+        })
 
     @mock.patch('subprocess.Popen', new_callable=create_popen_mock)
-    def test_get_info_fail_when_no_mmpeg(self, popen_mock):
-        popen_mock.return_value.communicate.side_effect = OSError(2, "ignored")
-        self.assertRaises(SushiError, lambda: FFmpeg.get_info('random.mkv'))
+    def test_get_info_v2_fail_when_no_ffprobe(self, popen_mock):
+        popen_mock.side_effect = OSError(2, 'ignored')
+        self.assertRaises(SushiError, lambda: FFmpeg.get_info_v2('random.mkv'))
+
+    @mock.patch.object(FFmpeg, 'get_info_v2')
+    def test_get_media_info_v2(self, get_info_mock):
+        get_info_mock.return_value = json.dumps(self.ffprobe_info_json)
+
+        media_info = FFmpeg.get_media_info_v2('random.mkv')
+
+        self.assertEqual(len(media_info.video), 1)
+        self.assertEqual(len(media_info.audio), 2)
+        self.assertEqual(len(media_info.subtitles), 2)
+        self.assertEqual(media_info.chapters, [0.0, 17.017, 107.023])
 
     @mock.patch('subprocess.call')
     def test_demux_file_call_args(self, call_mock):
