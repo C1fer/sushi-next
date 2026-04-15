@@ -133,7 +133,8 @@ class FFmpeg(object):
             sub_ext = supported_formats.get(sub_type)
 
             if (sub_ext is None):
-                raise SushiError(f"Unsupported subtitle format: {sub_type}")
+               logging.warning(f"Unsupported subtitle format: {sub_type}. Skipping...")
+               continue
             
             additional_info = f'{sub_type}'
             formatted_title = f'{title} ({language})' if language else title
