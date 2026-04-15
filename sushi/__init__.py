@@ -23,7 +23,7 @@ except ImportError:
 
 ALLOWED_ERROR = 0.01
 MAX_GROUP_STD = 0.025
-VERSION = '0.6.3'
+VERSION = '0.6.4'
 
 
 def abs_diff(a, b):
