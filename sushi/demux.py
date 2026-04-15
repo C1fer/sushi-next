@@ -16,20 +16,6 @@ MediaInfo = namedtuple('MediaInfo', ['video', 'audio', 'subtitles', 'chapters'])
 
 class FFmpeg(object):
     @staticmethod
-    def get_info(path):
-        try:
-            # text=True is an alias for universal_newlines since 3.7
-            process = subprocess.Popen(['ffmpeg', '-hide_banner', '-i', path], stderr=subprocess.PIPE,
-                                        universal_newlines=True, encoding='utf-8')
-            out, err = process.communicate()
-            process.wait()
-            return err
-        except OSError as e:
-            if e.errno == 2:
-                raise SushiError("Couldn't invoke ffmpeg, check that it's installed")
-            raise
-
-    @staticmethod
     def get_info_v2(path):
         try:
             args = [
@@ -87,51 +73,6 @@ class FFmpeg(object):
             raise
 
     @staticmethod
-    def _get_audio_streams(info):
-        streams = re.findall(r'Stream\s\#0:(\d+).*?Audio:\s*(.*?(?:\((default)\))?)\s*?(?:\(forced\))?\r?\n'
-                             r'(?:\s*Metadata:\s*\r?\n'
-                             r'\s*title\s*:\s*(.*?)\r?\n)?',
-                             info, flags=re.VERBOSE)
-        return [MediaStreamInfo(int(x[0]), x[1], x[2] != '', x[3]) for x in streams]
-
-    @staticmethod
-    def _get_video_streams(info):
-        streams = re.findall(r'Stream\s\#0:(\d+).*?Video:\s*(.*?(?:\((default)\))?)\s*?(?:\(forced\))?\r?\n'
-                             r'(?:\s*Metadata:\s*\r?\n'
-                             r'\s*title\s*:\s*(.*?)\r?\n)?',
-                             info, flags=re.VERBOSE)
-        return [MediaStreamInfo(int(x[0]), x[1], x[2] != '', x[3]) for x in streams]
-
-    @staticmethod
-    def _get_chapters_times(info):
-        return list(map(float, re.findall(r'Chapter #0.\d+: start (\d+\.\d+)', info)))
-
-    @staticmethod
-    def _get_subtitles_streams(info):
-
-        maps = {
-            'ssa': '.ass',
-            'ass': '.ass',
-            'subrip': '.srt'
-        }
-
-        streams = re.findall(r'Stream\s\#0:(\d+)(?:\([^)]*\))?:\s*Subtitle:\s*((\w+)(?:\s*\([^)]*\))?)\s*(?:\((default)\))?\s*(?:\(forced\))?\r?\n'
-                             r'(?:\s*Metadata:\s*\r?\n'
-                             r'\s*title\s*:\s*(.*?)\r?\n)?',
-                             info, flags=re.VERBOSE)
-        return [SubtitlesStreamInfo(int(x[0]), x[1], maps.get(x[2], x[2]), x[3] != '', x[4].strip() if x[4] else '') for x in streams]
-    
-    @classmethod
-    def get_media_info(cls, path):
-        info = cls.get_info(path)
-        video_streams = cls._get_video_streams(info)
-        audio_streams = cls._get_audio_streams(info)
-        subs_streams = cls._get_subtitles_streams(info)
-        chapter_times = cls._get_chapters_times(info)
-        return MediaInfo(video_streams, audio_streams, subs_streams, chapter_times)
-
-
-    @staticmethod
     def _get_audio_streams_v2(parsed_streams):
         streams = []
         for s in parsed_streams:
@@ -151,6 +92,7 @@ class FFmpeg(object):
         
         return streams
     
+    @staticmethod
     def _get_video_streams_v2(parsed_streams):
         streams = []
         for s in parsed_streams:
