@@ -36,7 +36,7 @@ class FFmpegTestCase(unittest.TestCase):
                 'sample_rate': '48000',
                 'channel_layout': 'stereo',
                 'bits_per_raw_sample': '16',
-                'disposition': {'default': 1},
+                'disposition': {'default': 1, 'forced': 1},
                 'tags': {'title': 'Audio AAC 2.0'}
             },
             {
@@ -52,7 +52,7 @@ class FFmpegTestCase(unittest.TestCase):
                 'index': 3,
                 'codec_type': 'subtitle',
                 'codec_name': 'ssa',
-                'disposition': {'default': 1},
+                'disposition': {'default': 1, 'forced': 1},
                 'tags': {'language': 'eng', 'title': 'English Subtitles'}
             },
             {
@@ -90,7 +90,7 @@ class FFmpegTestCase(unittest.TestCase):
 
         self.assertEqual(len(audio), 2)
         self.assertEqual(audio[0].id, 1)
-        self.assertEqual(audio[0].info, 'aac, 48000 Hz, stereo, 16 bits')
+        self.assertEqual(audio[0].info, 'aac, 48000 Hz, stereo, 16 bits, forced')
         self.assertTrue(audio[0].default)
         self.assertEqual(audio[0].title, 'Audio AAC 2.0')
         self.assertEqual(audio[1].id, 2)
@@ -117,7 +117,7 @@ class FFmpegTestCase(unittest.TestCase):
         self.assertEqual(subs[0].info, 'ssa')
         self.assertEqual(subs[0].type, '.ass')
         self.assertTrue(subs[0].default)
-        self.assertEqual(subs[0].title, 'English Subtitles (eng)')
+        self.assertEqual(subs[0].title, 'English Subtitles (eng) (forced)')
         self.assertEqual(subs[1].id, 4)
         self.assertEqual(subs[1].info, 'subrip')
         self.assertEqual(subs[1].type, '.srt')
@@ -149,7 +149,10 @@ class FFmpegTestCase(unittest.TestCase):
             '-v', 'quiet',
             '-show_streams',
             '-show_chapters',
-            '-show_entries', 'chapter=start_time',
+            '-show_entries',
+            'stream=index,codec_name,codec_type,sample_rate,width,height,channel_layout,bits_per_raw_sample,profile:'
+            'stream_tags=title,language:',
+            'stream_disposition=default,forcedchapter=start_time',
             '-print_format', 'json=compact=1',
             'random_file.mkv'
         ])
@@ -185,15 +188,15 @@ class FFmpegTestCase(unittest.TestCase):
         FFmpeg.demux_file('random.mkv', audio_stream=1, audio_path='audio0.wav', audio_rate=12000,
                           script_stream=2, script_path='out0.ass', video_stream=0, timecodes_path='tcs0.txt')
 
-        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-i', 'random.mkv', '-y',
+        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-stats', '-i', 'random.mkv', '-y',
                                    '-map', '0:0', '-ac', '1', '-acodec', 'pcm_s16le', 'audio1.wav'])
-        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-i', 'random.mkv', '-y',
+        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-stats', '-i', 'random.mkv', '-y',
                                    '-map', '0:0', '-ar', '12000', '-ac', '1', '-acodec', 'pcm_s16le', 'audio2.wav'])
-        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-i', 'random.mkv', '-y',
+        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-stats', '-i', 'random.mkv', '-y',
                                    '-map', '0:0', 'subs1.ass'])
-        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-i', 'random.mkv', '-y',
+        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-stats', '-i', 'random.mkv', '-y',
                                    '-map', '0:0', '-f', 'mkvtimestamp_v2', 'tcs1.txt'])
-        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-i', 'random.mkv', '-y',
+        call_mock.assert_any_call(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-stats', '-i', 'random.mkv', '-y',
                                    '-map', '0:1', '-ar', '12000', '-ac', '1', '-acodec', 'pcm_s16le', 'audio0.wav',
                                    '-map', '0:2', 'out0.ass',
                                    '-map', '0:0', '-f', 'mkvtimestamp_v2', 'tcs0.txt'])

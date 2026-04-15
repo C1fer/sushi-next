@@ -23,7 +23,11 @@ class FFmpeg(object):
                 '-v', 'quiet',
                 '-show_streams',
                 '-show_chapters',
-                '-show_entries', 'chapter=start_time',
+                '-show_entries',
+                'stream=index,codec_name,codec_type,sample_rate,width,height,channel_layout,bits_per_raw_sample,profile:'
+                'stream_tags=title,language:',
+                'stream_disposition=default,forced'
+                'chapter=start_time',
                 '-print_format', 'json=compact=1',
                 path
             ]
@@ -92,8 +96,9 @@ class FFmpeg(object):
 
             sample_rate = f'{s.get("sample_rate")} Hz' if s.get("sample_rate") else None
             bit_depth = f'{s.get("bits_per_raw_sample")} bits' if s.get('bits_per_raw_sample') else None
-            
-            additional_info = ', '.join(filter(None, [codec, sample_rate, channel_layout, bit_depth]))
+            forced_flag = 'forced' if s.get('disposition', {}).get('forced', 0) == 1 else None
+
+            additional_info = ', '.join(filter(None, [codec, sample_rate, channel_layout, bit_depth, forced_flag]))
 
             streams.append(MediaStreamInfo(idx, additional_info, default, title))
         
@@ -134,6 +139,7 @@ class FFmpeg(object):
             idx = s.get('index')
             title = s.get('tags', {}).get('title', '')
             default = s.get('disposition', {}).get('default', 0) == 1
+            forced = s.get('disposition', {}).get('forced', 0) == 1
 
             language = s.get('tags', {}).get('language')
             sub_type = s.get("codec_name", '')
@@ -144,7 +150,11 @@ class FFmpeg(object):
                continue
             
             additional_info = f'{sub_type}'
-            formatted_title = f'{title} ({language})' if language else title
+            formatted_title = ' '.join(filter(None, [
+                title, 
+                f'({language})' if language else None,
+                f'(forced)' if forced else None
+            ]))
 
             streams.append(SubtitlesStreamInfo(idx, additional_info, sub_ext, default, formatted_title))
         
