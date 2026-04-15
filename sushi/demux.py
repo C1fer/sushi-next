@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import subprocess
@@ -15,22 +16,45 @@ MediaInfo = namedtuple('MediaInfo', ['video', 'audio', 'subtitles', 'chapters'])
 
 class FFmpeg(object):
     @staticmethod
-    def get_info(path):
+    def get_info_v2(path):
         try:
-            # text=True is an alias for universal_newlines since 3.7
-            process = subprocess.Popen(['ffmpeg', '-hide_banner', '-i', path], stderr=subprocess.PIPE,
-                                       universal_newlines=True, encoding='utf-8')
-            out, err = process.communicate()
-            process.wait()
-            return err
+            args = [
+                'ffprobe',
+                '-v', 'quiet',
+                '-show_streams',
+                '-show_chapters',
+                '-show_entries',
+                'stream=index,codec_name,codec_type,sample_rate,width,height,channel_layout,bits_per_raw_sample,profile:'
+                'stream_tags=title,language:',
+                'stream_disposition=default,forced'
+                'chapter=start_time',
+                '-print_format', 'json=compact=1',
+                path
+            ]
+
+            process = subprocess.Popen(
+                args, 
+                stdout=subprocess.PIPE,
+                text=True, 
+                encoding='utf-8'
+            )
+            output, _ = process.communicate()
+            return output
         except OSError as e:
             if e.errno == 2:
-                raise SushiError("Couldn't invoke ffmpeg, check that it's installed")
+                raise SushiError("Couldn't invoke ffprobe, check that it's installed")
             raise
 
     @staticmethod
     def demux_file(input_path, **kwargs):
-        args = ['ffmpeg', '-hide_banner', '-i', input_path, '-y']
+        args = [
+            'ffmpeg', 
+            '-hide_banner', 
+            '-loglevel', 'error', 
+            '-stats', 
+            '-i', input_path, 
+            '-y'
+        ]
 
         audio_stream = kwargs.get('audio_stream', None)
         audio_path = kwargs.get('audio_path', None)
@@ -60,49 +84,118 @@ class FFmpeg(object):
             raise
 
     @staticmethod
-    def _get_audio_streams(info):
-        streams = re.findall(r'Stream\s\#0:(\d+).*?Audio:\s*(.*?(?:\((default)\))?)\s*?(?:\(forced\))?\r?\n'
-                             r'(?:\s*Metadata:\s*\r?\n'
-                             r'\s*title\s*:\s*(.*?)\r?\n)?',
-                             info, flags=re.VERBOSE)
-        return [MediaStreamInfo(int(x[0]), x[1], x[2] != '', x[3]) for x in streams]
+    def _get_audio_streams_v2(parsed_streams):
+        streams = []
+        for s in parsed_streams:
+            idx = s.get('index')
+            title = s.get('tags', {}).get('title')
+            default = s.get('disposition', {}).get('default', 0) == 1
+
+            codec = s.get('codec_name')
+            channel_layout = s.get('channel_layout')
+
+            sample_rate = f'{s.get("sample_rate")} Hz' if s.get("sample_rate") else None
+            bit_depth = f'{s.get("bits_per_raw_sample")} bits' if s.get('bits_per_raw_sample') else None
+            forced_flag = 'forced' if s.get('disposition', {}).get('forced', 0) == 1 else None
+
+            additional_info = ', '.join(filter(None, [codec, sample_rate, channel_layout, bit_depth, forced_flag]))
+
+            streams.append(MediaStreamInfo(idx, additional_info, default, title))
+        
+        return streams
+    
+    @staticmethod
+    def _get_video_streams_v2(parsed_streams):
+        streams = []
+        for s in parsed_streams:
+            idx = s.get('index')
+            title = s.get('tags', {}).get('title', '')
+            default = s.get('disposition', {}).get('default', 0) == 1
+
+            codec = s.get('codec_name', '')
+            codec_profile = s.get('profile', '')
+            width = s.get('width')
+            height = s.get('height')
+            
+            _resolution = f'{width}x{height}' if width and height else None
+            _codec_info = f'{codec} ({codec_profile})' if codec_profile else codec
+
+            additional_info = ', '.join(filter(None, [_codec_info, _resolution]))
+
+            streams.append(MediaStreamInfo(idx, additional_info, default, title))
+        
+        return streams
 
     @staticmethod
-    def _get_video_streams(info):
-        streams = re.findall(r'Stream\s\#0:(\d+).*?Video:\s*(.*?(?:\((default)\))?)\s*?(?:\(forced\))?\r?\n'
-                             r'(?:\s*Metadata:\s*\r?\n'
-                             r'\s*title\s*:\s*(.*?)\r?\n)?',
-                             info, flags=re.VERBOSE)
-        return [MediaStreamInfo(int(x[0]), x[1], x[2] != '', x[3]) for x in streams]
-
-    @staticmethod
-    def _get_chapters_times(info):
-        return list(map(float, re.findall(r'Chapter #0.\d+: start (\d+\.\d+)', info)))
-
-    @staticmethod
-    def _get_subtitles_streams(info):
-        maps = {
+    def _get_subtitles_streams_v2(parsed_streams):
+        supported_formats = { 
             'ssa': '.ass',
             'ass': '.ass',
             'subrip': '.srt'
         }
 
-        streams = re.findall(r'Stream\s\#0:(\d+)(?:\([^)]*\))?:\s*Subtitle:\s*((\w+)(?:\s*\([^)]*\))?)\s*(?:\((default)\))?\s*(?:\(forced\))?\r?\n'
-                             r'(?:\s*Metadata:\s*\r?\n'
-                             r'\s*title\s*:\s*(.*?)\r?\n)?',
-                             info, flags=re.VERBOSE)
-        return [SubtitlesStreamInfo(int(x[0]), x[1], maps.get(x[2], x[2]), x[3] != '', x[4].strip() if x[4] else '') for x in streams]
+        streams = []
+        for s in parsed_streams:
+            idx = s.get('index')
+            title = s.get('tags', {}).get('title', '')
+            default = s.get('disposition', {}).get('default', 0) == 1
+            forced = s.get('disposition', {}).get('forced', 0) == 1
+
+            language = s.get('tags', {}).get('language')
+            sub_type = s.get("codec_name", '')
+            sub_ext = supported_formats.get(sub_type)
+
+            if (sub_ext is None):
+               logging.warning(f"Unsupported subtitle format: {sub_type}. Skipping...")
+               continue
+            
+            additional_info = f'{sub_type}'
+            formatted_title = ' '.join(filter(None, [
+                title, 
+                f'({language})' if language else None,
+                f'(forced)' if forced else None
+            ]))
+
+            streams.append(SubtitlesStreamInfo(idx, additional_info, sub_ext, default, formatted_title))
+        
+        return streams
     
+    @staticmethod
+    def _get_chapters_times_v2(chapters):
+        return [float(c.get('start_time')) for c in chapters]
+
     @classmethod
-    def get_media_info(cls, path):
-        info = cls.get_info(path)
-        video_streams = cls._get_video_streams(info)
-        audio_streams = cls._get_audio_streams(info)
-        subs_streams = cls._get_subtitles_streams(info)
-        chapter_times = cls._get_chapters_times(info)
+    def get_media_info_v2(cls, path):
+        info = cls.get_info_v2(path)
+        streams, chapters = cls.get_clean_probe_info(info)
+
+        video_streams = cls._get_video_streams_v2(streams.get('video', []))
+        audio_streams = cls._get_audio_streams_v2(streams.get('audio', []))
+        subs_streams = cls._get_subtitles_streams_v2(streams.get('subtitle', []))
+        chapter_times = cls._get_chapters_times_v2(chapters)
+        
         return MediaInfo(video_streams, audio_streams, subs_streams, chapter_times)
 
+    @classmethod 
+    def get_clean_probe_info(cls, info):
+        try: 
+            parsed = json.loads(info)
+            streams_by_type = {}
 
+            for stream in parsed["streams"]:
+                codec_type = stream['codec_type']
+                
+                if codec_type == 'attachment':
+                    continue
+
+                streams_by_type.setdefault(codec_type, []).append(stream)
+
+            return (streams_by_type, parsed["chapters"])
+        except json.JSONDecodeError:
+            raise SushiError("Couldn't parse ffprobe output, maybe it's too old?")
+        except Exception as e:
+            raise SushiError("Couldn't parse ffprobe output: {0}".format(str(e)))
+        
 class MkvToolnix(object):
     @classmethod
     def extract_timecodes(cls, mkv_path, stream_idx, output_path):
@@ -232,7 +325,7 @@ class Demuxer(object):
         super(Demuxer, self).__init__()
         self._path = path
         self._is_wav = get_extension(self._path) == '.wav'
-        self._mi = None if self._is_wav else FFmpeg.get_media_info(self._path)
+        self._mi = None if self._is_wav else FFmpeg.get_media_info_v2(self._path)
         self._demux_audio = self._demux_subs = self._make_timecodes = self._make_keyframes = self._write_chapters = False
 
     @property
@@ -335,24 +428,25 @@ class Demuxer(object):
     def _format_streams_list(cls, streams):
         return '\n'.join(map(cls._format_stream, streams))
 
-    def _select_stream(self, streams, chosen_idx, name):
+    def _select_stream(self, streams, chosen_idx, stream_type):
+        formatted_stream_type = (stream_type[:-1] if stream_type.endswith('s') else stream_type)
         if not streams:
-            raise SushiError('No {0} streams found in {1}'.format(name, self._path))
+            raise SushiError('No {0} streams found in {1}'.format(formatted_stream_type, self._path))
         if chosen_idx is None:
             if len(streams) > 1:
                 default_track = next((s for s in streams if s.default), None)
                 if default_track:
-                    logging.warning('Using default track {0} in {1} because there are multiple candidates'
-                                    .format(self._format_stream(default_track), self._path))
+                    logging.warning('Using default {0} track {1} in {2} because there are multiple candidates'
+                                    .format(formatted_stream_type, self._format_stream(default_track), self._path))
                     return default_track
                 raise SushiError('More than one {0} stream found in {1}.'
                                  'You need to specify the exact one to demux. Here are all candidates:\n'
-                                 '{2}'.format(name, self._path, self._format_streams_list(streams)))
+                                 '{2}'.format(formatted_stream_type, self._path, self._format_streams_list(streams)))
             return streams[0]
 
         try:
             return next(x for x in streams if x.id == chosen_idx)
         except StopIteration:
-            raise SushiError("Stream with index {0} doesn't exist in {1}.\n"
+            raise SushiError("{0} stream with index {1} doesn't exist in {2}.\n"
                              "Here are all that do:\n"
-                             "{2}".format(chosen_idx, self._path, self._format_streams_list(streams)))
+                             "{3}".format(formatted_stream_type.capitalize(), chosen_idx, self._path, self._format_streams_list(streams)))

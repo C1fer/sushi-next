@@ -31,37 +31,32 @@ Sushi should work on Windows, Linux and OS X. Please open an issue if it doesn't
 2. [NumPy][6] (2.3.4 or newer)
 3. [SciPy][6] (1.16.2 or newer)
 4. [OpenCV 4.4.x or newer][7]
+5. [FFmpeg][9] (for any kind of demuxing)
 
 Optionally, you might want:
-
-1. [FFmpeg][9] for any kind of demuxing
-2. [MkvExtract][10] for faster timecodes extraction when demuxing
-3. [SCXvid-standalone][11] if you want Sushi to make keyframes
-4. [Colorama](https://github.com/tartley/colorama) to add colors to console output on Windows
+1. [MkvExtract][10] for faster timecodes extraction when demuxing
+2. [SCXvid-standalone][11] if you want Sushi to make keyframes
+3. [Colorama](https://github.com/tartley/colorama) to add colors to console output on Windows
 
 #### Installation on Windows
-<!-- The provided Windows binaries include all required components and Colorama so you don't have to install them if you use the binary distribution. You still have to download other applications yourself if you want to use Sushi's demuxing capabilities. -->
-Because the "maintainer" of this fork does not run Windows and is not interested in providing binaries, you are kind of on your own.
-The following steps are untested (see requirements earlier):
-
 1. Install Python (64 bit).
+2. Install FFmpeg.
 2. Install OpenCV.
-3. Run `pip install sushi-sub-next colorama` on a terminal.
+3. Run `pip install sushi-sub-next` on a terminal.
 4. Use it as `sushi args…` on a terminal.
 
 If anyone wants to provide proper installation steps or a binary for Windows, please open a PR or get in contact.
 
 #### Installation on Mac OS X
 
-No binary packages are provided for OS X right now so you'll have to use the script form. Assuming you have Python 3, pip and [homebrew](http://brew.sh/) installed, run the following:
+No binary packages are provided for OS X right now so you'll have to use the script form. Assuming you have Python, pip and [homebrew](http://brew.sh/) installed, run the following:
 ```bash
-brew tap homebrew/science
-brew install git opencv
+brew install git opencv ffmpeg
 pip3 install numpy
 # install some optional dependencies
-brew install ffmpeg mkvtoolnix
+brew install f mkvtoolnix
 # install sushi
-pip3 install sushi-sub-next
+pip install sushi-sub-next
 # use sushi
 sushi args…
 ```
@@ -71,13 +66,13 @@ sushi args…
 If you have apt-get available, the installation process is trivial.
 ```bash
 sudo apt-get update
-sudo apt-get install git python3 python3-numpy python3-opencv
+sudo apt-get install git python3 python3-numpy python3-opencv ffmpeg
 
-pip3 install --user sushi-sub-next
+pip install --user sushi-sub-next
 # if ~/.local/bin is in your PATH
 sushi args…
 # otherwise
-python3 -m sushi args…
+python -m sushi args…
 ```
 
 For other distros, pick corresponding package names for the python, numpy, and opencv dependencies.

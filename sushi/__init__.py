@@ -23,7 +23,7 @@ except ImportError:
 
 ALLOWED_ERROR = 0.01
 MAX_GROUP_STD = 0.025
-VERSION = '0.6.3'
+VERSION = '0.6.4'
 
 
 def abs_diff(a, b):
@@ -138,9 +138,13 @@ def fix_near_borders(events):
     def fix_border(event_list, median_diff):
         last_ten_diff = np.median([x.diff for x in event_list[:10]], overwrite_input=True)
         diff_limit = min(last_ten_diff, median_diff)
+        if not np.isfinite(diff_limit) or diff_limit <= 0:
+            return 0
+
         broken = []
         for event in event_list:
-            if not 0.2 < (event.diff / diff_limit) < 5:
+            ratio = event.diff / diff_limit
+            if not np.isfinite(ratio) or not 0.2 < ratio < 5:
                 broken.append(event)
             else:
                 for x in broken:
@@ -351,7 +355,8 @@ def calculate_shifts(src_stream, dst_stream, groups_list, normal_window, max_win
         logging.debug('{0}-{1}: shift: {2:0.5f} [{3:0.5f}, {4:0.5f}], search offset: {5:0.6f}'
                       .format(format_time(state["start_time"]), format_time(state["end_time"]),
                               shift, left_side_shift, right_side_shift, search_offset))
-
+        
+    logging.info('---Calculating shifts---')
     small_window = 1.5
     idx = 0
     committed_states = []
@@ -591,6 +596,7 @@ def run(args):
 
     # after this point nothing should fail so it's safe to start slow operations
     # like running the actual demuxing
+    logging.info('---Demuxing---')
     src_demuxer.demux()
     dst_demuxer.demux()
 
@@ -625,6 +631,7 @@ def run(args):
             plt.plot([x.shift for x in events], label='From audio')
 
         if args.grouping:
+            logging.info('---Grouping and smoothing---')
             if not ignore_chapters and chapter_times:
                 groups = groups_from_chapters(events, chapter_times)
                 for g in groups:
