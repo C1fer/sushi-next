@@ -138,9 +138,13 @@ def fix_near_borders(events):
     def fix_border(event_list, median_diff):
         last_ten_diff = np.median([x.diff for x in event_list[:10]], overwrite_input=True)
         diff_limit = min(last_ten_diff, median_diff)
+        if not np.isfinite(diff_limit) or diff_limit <= 0:
+            return 0
+
         broken = []
         for event in event_list:
-            if not 0.2 < (event.diff / diff_limit) < 5:
+            ratio = event.diff / diff_limit
+            if not np.isfinite(ratio) or not 0.2 < ratio < 5:
                 broken.append(event)
             else:
                 for x in broken:
