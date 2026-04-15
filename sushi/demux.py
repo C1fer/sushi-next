@@ -418,24 +418,25 @@ class Demuxer(object):
     def _format_streams_list(cls, streams):
         return '\n'.join(map(cls._format_stream, streams))
 
-    def _select_stream(self, streams, chosen_idx, name):
+    def _select_stream(self, streams, chosen_idx, stream_type):
+        formatted_stream_type = (stream_type[:-1] if stream_type.endswith('s') else stream_type)
         if not streams:
-            raise SushiError('No {0} streams found in {1}'.format(name, self._path))
+            raise SushiError('No {0} streams found in {1}'.format(formatted_stream_type, self._path))
         if chosen_idx is None:
             if len(streams) > 1:
                 default_track = next((s for s in streams if s.default), None)
                 if default_track:
-                    logging.warning('Using default track {0} in {1} because there are multiple candidates'
-                                    .format(self._format_stream(default_track), self._path))
+                    logging.warning('Using default {0} track {1} in {2} because there are multiple candidates'
+                                    .format(formatted_stream_type, self._format_stream(default_track), self._path))
                     return default_track
                 raise SushiError('More than one {0} stream found in {1}.'
                                  'You need to specify the exact one to demux. Here are all candidates:\n'
-                                 '{2}'.format(name, self._path, self._format_streams_list(streams)))
+                                 '{2}'.format(formatted_stream_type, self._path, self._format_streams_list(streams)))
             return streams[0]
 
         try:
             return next(x for x in streams if x.id == chosen_idx)
         except StopIteration:
-            raise SushiError("Stream with index {0} doesn't exist in {1}.\n"
+            raise SushiError("{0} stream with index {1} doesn't exist in {2}.\n"
                              "Here are all that do:\n"
-                             "{2}".format(chosen_idx, self._path, self._format_streams_list(streams)))
+                             "{3}".format(formatted_stream_type.capitalize(), chosen_idx, self._path, self._format_streams_list(streams)))
