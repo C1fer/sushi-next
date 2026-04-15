@@ -43,7 +43,14 @@ class FFmpeg(object):
 
     @staticmethod
     def demux_file(input_path, **kwargs):
-        args = ['ffmpeg', '-hide_banner', '-i', input_path, '-y']
+        args = [
+            'ffmpeg', 
+            '-hide_banner', 
+            '-loglevel', 'error', 
+            '-stats', 
+            '-i', input_path, 
+            '-y'
+        ]
 
         audio_stream = kwargs.get('audio_stream', None)
         audio_path = kwargs.get('audio_path', None)

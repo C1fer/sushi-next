@@ -351,7 +351,8 @@ def calculate_shifts(src_stream, dst_stream, groups_list, normal_window, max_win
         logging.debug('{0}-{1}: shift: {2:0.5f} [{3:0.5f}, {4:0.5f}], search offset: {5:0.6f}'
                       .format(format_time(state["start_time"]), format_time(state["end_time"]),
                               shift, left_side_shift, right_side_shift, search_offset))
-
+        
+    logging.info('---Calculating shifts---')
     small_window = 1.5
     idx = 0
     committed_states = []
@@ -591,6 +592,7 @@ def run(args):
 
     # after this point nothing should fail so it's safe to start slow operations
     # like running the actual demuxing
+    logging.info('---Demuxing---')
     src_demuxer.demux()
     dst_demuxer.demux()
 
@@ -625,6 +627,7 @@ def run(args):
             plt.plot([x.shift for x in events], label='From audio')
 
         if args.grouping:
+            logging.info('---Grouping and smoothing---')
             if not ignore_chapters and chapter_times:
                 groups = groups_from_chapters(events, chapter_times)
                 for g in groups:
