@@ -192,7 +192,7 @@ class FFmpeg(object):
 
             return (streams_by_type, parsed["chapters"])
         except json.JSONDecodeError:
-            raise SushiError("Couldn't parse ffprobe output, maybe it's too old?")
+            raise SushiError("Couldn't parse ffprobe JSON oputput, check that the file is valid and ffprobe is up to date")
         except Exception as e:
             raise SushiError("Couldn't parse ffprobe output: {0}".format(str(e)))
         
