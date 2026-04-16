@@ -25,8 +25,8 @@ class FFmpeg(object):
                 '-show_chapters',
                 '-show_entries',
                 'stream=index,codec_name,codec_type,sample_rate,width,height,channel_layout,bits_per_raw_sample,profile:'
-                'stream_tags=title,language:',
-                'stream_disposition=default,forced'
+                'stream_tags=title,language:'
+                'stream_disposition=default,forced:'
                 'chapter=start_time',
                 '-print_format', 'json=compact=1',
                 path
@@ -192,7 +192,7 @@ class FFmpeg(object):
 
             return (streams_by_type, parsed["chapters"])
         except json.JSONDecodeError:
-            raise SushiError("Couldn't parse ffprobe output, maybe it's too old?")
+            raise SushiError("Couldn't parse ffprobe JSON oputput, check that the file is valid and ffprobe is up to date")
         except Exception as e:
             raise SushiError("Couldn't parse ffprobe output: {0}".format(str(e)))
         

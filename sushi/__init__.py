@@ -23,7 +23,7 @@ except ImportError:
 
 ALLOWED_ERROR = 0.01
 MAX_GROUP_STD = 0.025
-VERSION = '0.6.4'
+VERSION = '0.6.5'
 
 
 def abs_diff(a, b):
@@ -49,6 +49,12 @@ def interpolate_nones(data, points):
 def running_median(values, window_size):
     if window_size % 2 != 1:
         raise SushiError('Median window size should be odd')
+    if not values:
+        return []
+    if len(values) < window_size:
+        window_size = len(values) if len(values) % 2 == 1 else len(values) - 1
+        if window_size < 1:
+            return list(values)
     return medfilt(values, kernel_size=window_size).tolist()
 
 def smooth_events(events, radius):
@@ -671,6 +677,10 @@ def run(args):
                     e.resolve_link()
                 snap_groups_to_keyframes(events, chapter_times, args.max_ts_duration, args.max_ts_distance, src_keytimes,
                                          dst_keytimes, src_timecodes, dst_timecodes, args.max_kf_distance, args.kf_mode)
+
+        total_shifts = [e.shift for e in events if not e.linked and e.shift is not None]
+        if total_shifts:
+            logging.info('Total average shift: {0:.3f}s'.format(np.mean(total_shifts)))
 
         for event in events:
             event.apply_shift()
