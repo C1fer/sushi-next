@@ -49,6 +49,12 @@ def interpolate_nones(data, points):
 def running_median(values, window_size):
     if window_size % 2 != 1:
         raise SushiError('Median window size should be odd')
+    if not values:
+        return []
+    if len(values) < window_size:
+        window_size = len(values) if len(values) % 2 == 1 else len(values) - 1
+        if window_size < 1:
+            return list(values)
     return medfilt(values, kernel_size=window_size).tolist()
 
 def smooth_events(events, radius):
