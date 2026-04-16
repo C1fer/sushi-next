@@ -151,8 +151,9 @@ class FFmpegTestCase(unittest.TestCase):
             '-show_chapters',
             '-show_entries',
             'stream=index,codec_name,codec_type,sample_rate,width,height,channel_layout,bits_per_raw_sample,profile:'
-            'stream_tags=title,language:',
-            'stream_disposition=default,forcedchapter=start_time',
+            'stream_tags=title,language:'
+            'stream_disposition=default,forced:'
+            'chapter=start_time',
             '-print_format', 'json=compact=1',
             'random_file.mkv'
         ])
