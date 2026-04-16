@@ -38,6 +38,26 @@ Optionally, you might want:
 2. [SCXvid-standalone][11] if you want Sushi to make keyframes
 3. [Colorama](https://github.com/tartley/colorama) to add colors to console output on Windows
 
+### Development setup (uv)
+
+Use [uv](https://docs.astral.sh/uv/) to create a local environment and install dependencies from `pyproject.toml`:
+
+```bash
+uv sync
+```
+
+Run Sushi from the managed environment:
+
+```bash
+uv run sushi --src hdtv.wav --dst bluray.wav --script subs.ass
+```
+
+Run tests:
+
+```bash
+uv run python run-tests.py
+```
+
 #### Installation on Windows
 1. Install Python (64 bit).
 2. Install FFmpeg.

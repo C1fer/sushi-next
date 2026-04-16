@@ -1,31 +1,40 @@
-[tool.poetry]
+[project]
 name = "sushi-sub-next"
 version = "0.6.4"
 description = "Subtitle Synchronization Tool"
-authors = ["C1fer"]
-license = "MIT"
 readme = "README.md"
-repository = "https://github.com/C1fer/sushi-next"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [
+    { name = "C1fer" }
+]
 keywords = ["subtitle", "sync"]
 classifiers = [
-    'Development Status :: 5 - Production/Stable',
-    'Programming Language :: Python :: 3.13',
-    'Topic :: Multimedia :: Sound/Audio',
-    'Topic :: Text Processing',
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Text Processing",
 ]
-packages = [
-    { include = "sushi" }
+dependencies = [
+    "numpy>=2.3.4,<3",
+    "scipy>=1.16.2,<2",
+    "opencv-python>=4.8.1.78,<5",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.13"
-numpy = "^2.3.4"
-scipy = "^1.16.2"
-opencv-python = "^4.8.1.78"
+[project.urls]
+Repository = "https://github.com/C1fer/sushi-next"
 
-[tool.poetry.scripts]
+[project.scripts]
 sushi = "sushi.__main__:main"
 
+[tool.hatch.build.targets.wheel]
+packages = ["sushi"]
+
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
