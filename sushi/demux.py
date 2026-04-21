@@ -146,7 +146,7 @@ class FFmpeg(object):
             sub_ext = supported_formats.get(sub_type)
 
             if (sub_ext is None):
-               logging.info(f"Unsupported subtitle format: {sub_type}. Skipping...")
+               logging.warning(f"Unsupported subtitle format: {sub_type}. Skipping...")
                continue
             
             additional_info = f'{sub_type}'
