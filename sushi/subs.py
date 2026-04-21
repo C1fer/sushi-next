@@ -235,7 +235,7 @@ class AssScript(ScriptBase):
                         try:
                             parse_function(line)
                         except Exception as e:
-                            raise SushiError("That's some invalid ASS script: {0} [line {1}]".format(e.message, line_idx))
+                            raise SushiError("That's some invalid ASS script: {0} [line {1}]".format(str(e), line_idx))
         except IOError:
             raise SushiError("Script {0} not found".format(path))
         return cls(script_info, styles, events, other_sections)
