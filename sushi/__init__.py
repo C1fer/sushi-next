@@ -117,7 +117,7 @@ def split_broken_groups(groups):
     for g in groups:
         std = np.std([e.shift for e in g])
         if std > MAX_GROUP_STD:
-            logging.warning('Shift is not consistent between {0} and {1}, most likely chapters are wrong (std: {2}). '
+            logging.warning('Warning: Shift is not consistent between {0} and {1}, most likely chapters are wrong (std: {2}). '
                          'Switching to automatic grouping.'.format(format_time(g[0].start), format_time(g[-1].end),
                                                                    std))
             correct_groups.extend(detect_groups(g))
@@ -241,7 +241,7 @@ def snap_groups_to_keyframes(events, chapter_times, max_ts_duration, max_ts_dist
             for group, (start_shift, end_shift) in zip(groups, shifts):
                 if abs(start_shift - end_shift) > 0.001 and len(group) > 1:
                     actual_shift = min(start_shift, end_shift, key=lambda x: abs(x - mean_shift))
-                    logging.warning("Typesetting group at {0} had different shift at start/end points ({1} and {2}). Shifting by {3}."
+                    logging.warning("Warning: Typesetting group at {0} had different shift at start/end points ({1} and {2}). Shifting by {3}."
                                     .format(format_time(group[0].start), start_shift, end_shift, actual_shift))
                     for e in group:
                         e.adjust_shift(actual_shift)
@@ -427,7 +427,7 @@ def calculate_shifts(src_stream, dst_stream, groups_list, normal_window, max_win
             uncommitted_states.append(group_state)
             idx += 1
             if rewind_thresh == len(uncommitted_states) and window < max_window:
-                logging.warning("Detected possibly broken segment starting at {0}, increasing the window from {1} to {2}"
+                logging.warning("Warning: Detected possibly broken segment starting at {0}, increasing the window from {1} to {2}"
                              .format(format_time(uncommitted_states[0]["start_time"]), window, max_window))
                 window = max_window
                 idx = len(committed_states)
@@ -436,7 +436,7 @@ def calculate_shifts(src_stream, dst_stream, groups_list, normal_window, max_win
 
         # we're back on track - apply current shift to all broken events
         if uncommitted_states:
-            logging.warning("Events from {0} to {1} will most likely be broken!".format(
+            logging.warning("Warning: Events from {0} to {1} will most likely be broken!".format(
                 format_time(uncommitted_states[0]["start_time"]),
                 format_time(uncommitted_states[-1]["end_time"])))
 

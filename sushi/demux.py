@@ -146,7 +146,7 @@ class FFmpeg(object):
             sub_ext = supported_formats.get(sub_type)
 
             if (sub_ext is None):
-               logging.warning(f"Unsupported subtitle format: {sub_type}. Skipping...")
+               logging.info(f"Unsupported subtitle format: {sub_type}. Skipping...")
                continue
             
             additional_info = f'{sub_type}'
@@ -436,7 +436,7 @@ class Demuxer(object):
             if len(streams) > 1:
                 default_track = next((s for s in streams if s.default), None)
                 if default_track:
-                    logging.warning('Using default {0} track {1} in {2} because there are multiple candidates'
+                    logging.warning('Warning: Using default {0} track {1} in {2} because there are multiple candidates'
                                     .format(formatted_stream_type, self._format_stream(default_track), self._path))
                     return default_track
                 raise SushiError('More than one {0} stream found in {1}.'
