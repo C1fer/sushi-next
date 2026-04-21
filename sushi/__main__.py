@@ -136,7 +136,8 @@ def parse_args_and_run(cmd_keys):
     logging.root.addHandler(handler)
     logging.root.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
-    logging.info("Sushi's running with arguments: {0}".format(' '.join(map(format_arg, cmd_keys))))
+    logging.info('Sushi - Automatic Subtitle Shifter (v{0})'.format(VERSION))
+    logging.info("Running with arguments: {0}".format(' '.join(map(format_arg, cmd_keys))))
     start_time = time.time()
     run(args)
     logging.info('Done in {0}s'.format(time.time() - start_time))
