@@ -268,4 +268,4 @@ class AssScript(ScriptBase):
                 lines.extend(section_lines)
 
         with codecs.open(path, encoding='utf-8-sig', mode='w') as script:
-            script.write(str(os.linesep).join(lines))
+            script.write('\n'.join(lines))
