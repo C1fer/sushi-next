@@ -5,6 +5,7 @@ import os
 
 import numpy as np
 from scipy.signal import medfilt
+from importlib.metadata import version
 
 from . import chapters
 from .common import SushiError, get_extension, format_time, ensure_static_collection
@@ -12,6 +13,7 @@ from .demux import Timecodes, Demuxer
 from . import keyframes
 from .subs import AssScript, SrtScript
 from .wav import WavStream
+
 
 
 try:
@@ -23,7 +25,7 @@ except ImportError:
 
 ALLOWED_ERROR = 0.01
 MAX_GROUP_STD = 0.025
-VERSION = '0.6.5'
+VERSION = version("sushi-sub-next")
 
 
 def abs_diff(a, b):
