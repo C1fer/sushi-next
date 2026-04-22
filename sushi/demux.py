@@ -411,14 +411,17 @@ class Demuxer(object):
             FFmpeg.demux_file(self._path, **ffargs)
 
     def cleanup(self):
-        if self._demux_audio:
-            os.remove(self._audio_output_path)
-        if self._demux_subs:
-            os.remove(self._script_output_path)
-        if self._make_timecodes:
-            os.remove(self._timecodes_output_path)
-        if self._write_chapters:
-            os.remove(self._chapters_output_path)
+        try: 
+            if self._demux_audio and os.path.exists(self._audio_output_path): 
+                os.remove(self._audio_output_path)
+            if self._demux_subs and os.path.exists(self._script_output_path):
+                os.remove(self._script_output_path)
+            if self._make_timecodes and os.path.exists(self._timecodes_output_path):
+                os.remove(self._timecodes_output_path)
+            if self._write_chapters and os.path.exists(self._chapters_output_path):
+                os.remove(self._chapters_output_path)
+        except Exception as e:
+            logging.warning(f"Couldn't clean up temporary files: {str(e)}")
 
     @classmethod
     def _format_stream(cls, stream):
@@ -436,7 +439,7 @@ class Demuxer(object):
             if len(streams) > 1:
                 default_track = next((s for s in streams if s.default), None)
                 if default_track:
-                    logging.warning('Using default {0} track {1} in {2} because there are multiple candidates'
+                    logging.warning('Warning: Using default {0} track {1} in {2} because there are multiple candidates'
                                     .format(formatted_stream_type, self._format_stream(default_track), self._path))
                     return default_track
                 raise SushiError('More than one {0} stream found in {1}.'

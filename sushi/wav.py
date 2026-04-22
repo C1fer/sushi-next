@@ -67,6 +67,9 @@ class WavStream:
         pad_samples = int(self.PADDING_SECONDS * stream.framerate)
         total_samples = pad_samples * 2 + self.sample_count
 
+        logging.info(f'Loading WAV: {total_seconds:.1f}s @ {stream.framerate}Hz ({stream.channels_count}ch), '
+                     f'resampling to {sample_rate}Hz')
+
         data = np.empty(total_samples, dtype=np.float32)
         pos = pad_samples
         seconds_read = 0.0
@@ -83,6 +86,13 @@ class WavStream:
             data[pos:pos + len(chunk)] = chunk
             pos += len(chunk)
             seconds_read += self.READ_CHUNK_SIZE
+            
+            # Log progress for files taking more than 2 seconds
+            if start_time and (time() - start_time) > 2.0:
+                elapsed = time() - start_time
+                rate = seconds_read / elapsed if elapsed > 0 else 0
+                logging.debug(f'WAV loading: {seconds_read:.1f}s/{total_seconds:.1f}s ({100*seconds_read/total_seconds:.0f}%) '
+                              f'[{rate:.1f}x speed]')
 
         # pad both ends with edge values
         data[:pad_samples] = data[pad_samples]

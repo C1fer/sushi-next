@@ -1,4 +1,3 @@
-import codecs
 import os
 import re
 import collections
@@ -126,7 +125,7 @@ class SrtScript(ScriptBase):
     @classmethod
     def from_file(cls, path):
         try:
-            with codecs.open(path, encoding='utf-8-sig') as script:
+            with open(path, encoding='utf-8-sig') as script:
                 text = script.read()
                 events_list = [SrtEvent(
                     source_index=int(match.group(1)),
@@ -140,7 +139,7 @@ class SrtScript(ScriptBase):
 
     def save_to_file(self, path):
         text = '\n\n'.join(map(str, self.events))
-        with codecs.open(path, encoding='utf-8', mode='w') as script:
+        with open(path, encoding='utf-8', mode='w') as script:
             script.write(text)
 
 
@@ -215,7 +214,7 @@ class AssScript(ScriptBase):
         parse_function = None
 
         try:
-            with codecs.open(path, encoding='utf-8-sig') as script:
+            with open(path, encoding='utf-8-sig') as script:
                 for line_idx, line in enumerate(script):
                     line = line.strip()
                     if not line:
@@ -235,7 +234,7 @@ class AssScript(ScriptBase):
                         try:
                             parse_function(line)
                         except Exception as e:
-                            raise SushiError("That's some invalid ASS script: {0} [line {1}]".format(e.message, line_idx))
+                            raise SushiError("That's some invalid ASS script: {0} [line {1}]".format(str(e), line_idx))
         except IOError:
             raise SushiError("Script {0} not found".format(path))
         return cls(script_info, styles, events, other_sections)
@@ -267,5 +266,6 @@ class AssScript(ScriptBase):
                 lines.append(section_name)
                 lines.extend(section_lines)
 
-        with codecs.open(path, encoding='utf-8-sig', mode='w') as script:
-            script.write(str(os.linesep).join(lines))
+        with open(path, encoding='utf-8-sig', mode='w') as script:
+            script.write('\n'.join(lines))
+

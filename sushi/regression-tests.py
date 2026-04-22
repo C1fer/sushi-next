@@ -124,7 +124,7 @@ def run_test(base_path, plots_path, test_name, params):
         try:
             subprocess.call(cmd, stderr=log_file, stdout=log_file)
         except Exception as e:
-            logging.critical('Sushi failed on test "{0}": {1}'.format(test_name, e.message))
+            logging.critical('Sushi failed on test "{0}": {1}'.format(test_name, str(e)))
             return False
 
     with set_file_logger(log_path):
