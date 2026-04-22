@@ -68,7 +68,7 @@ class WavStream:
         total_samples = pad_samples * 2 + self.sample_count
 
         logging.info(f'Loading WAV: {total_seconds:.1f}s @ {stream.framerate}Hz ({stream.channels_count}ch), '
-                     f'resampling to {sample_rate}Hz')
+                     f'resampling to mono @ {sample_rate}Hz')
 
         data = np.empty(total_samples, dtype=np.float32)
         pos = pad_samples
